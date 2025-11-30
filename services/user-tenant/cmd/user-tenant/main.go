@@ -1,30 +1,49 @@
 package main
 
 import (
-	"os"
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
+
+	_ "github.com/lib/pq"
+	"github.com/zack-canned/marvin-backend/services/user-tenant/internal/api"
+	"github.com/zack-canned/marvin-backend/services/user-tenant/internal/auth"
+	"github.com/zack-canned/marvin-backend/services/user-tenant/internal/config"
+	"github.com/zack-canned/marvin-backend/services/user-tenant/internal/storage/postgres"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello from the user-tenant service!")
-}
-
 func main() {
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("POSTGRES_USER")
-	dbPassword := os.Getenv("POSTGRES_PASSWORD")
-	dbName := os.Getenv("POSTGRES_DB")
+	serverConfig, err := config.LoadServerConfig()
+	if err != nil {
+		log.Fatalf("Failed to load server configuration: %v", err)
+	}
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", 
-			dbHost, dbPort, dbUser, dbPassword, dbName)
-	fmt.Print("Conneting to:", psqlInfo)
+	dbConfig, err := config.LoadDBConfig()
+	if err != nil {
+		log.Fatalf("Failed to load database configuration: %v", err)
+	}
 
-	http.HandleFunc("/", handler)
-	fmt.Println("Server starting on port 8080...")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		fmt.Printf("Error starting server: %s\n", err)
+	db, err := sql.Open("postgres", dbConfig.ConnString())
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
+
+	fmt.Println("Successfully connected to the database")
+
+	userRepo := postgres.NewPostgresUserRepository(db)
+	authService := auth.NewAuthService(userRepo)
+	authHandler := auth.NewAuthHandler(authService)
+	router := api.NewRouter(authHandler)
+
+	addr := fmt.Sprintf("%s:%s", serverConfig.Host, serverConfig.Port)
+	fmt.Printf("Server starting on %s...\n", addr)
+	if err := http.ListenAndServe(addr, router); err != nil {
+		log.Fatalf("Error starting server: %s\n", err)
 	}
 }
-
