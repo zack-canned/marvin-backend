@@ -1,0 +1,25 @@
+version: '3.8'
+
+name: user_tenant_service
+
+services:
+  db:
+    build:
+      dockerfile: Dockerfile
+    image: local/user-tenant-service/db:v0.0.1
+    container_name: db
+    volumes:
+      - pgdata:/var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
+    env_file:
+      - './.env'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
