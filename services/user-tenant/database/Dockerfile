@@ -5,7 +5,7 @@ ENV PORT=5432
 
 WORKDIR ${HOME}
     
-COPY ./init.sql /docker-entrypoint-initdb.d/
+COPY ./init /docker-entrypoint-initdb.d/
 
 EXPOSE ${PORT}
 

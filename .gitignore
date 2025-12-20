@@ -212,3 +212,6 @@ go.work.sum
 
 # Gemini
 GEMINI.md
+
+# Local Dev
+.localdev/
