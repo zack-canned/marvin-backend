@@ -1,7 +1,5 @@
-version: '3.8'
-
+---
 name: user_tenant_service
-
 services:
   db:
     build:

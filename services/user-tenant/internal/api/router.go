@@ -10,6 +10,7 @@ import (
 func NewRouter(authHandler *auth.AuthHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("/ping", HandlePing)
 	mux.HandleFunc("/register", authHandler.HandleRegister)
 	mux.HandleFunc("/login", authHandler.HandleLogin)
 
