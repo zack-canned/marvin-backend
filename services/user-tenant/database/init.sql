@@ -1,11 +1,15 @@
-CREATE ROLE user_tenant_owner WITH
-    LOGIN
-    PASSWORD 'microservice';
-COMMENT ON ROLE user_tenant_owner IS 'Main role for microservice connections to application data.';
-
-CREATE SCHEMA commons AUTHORIZATION user_tenant_owner;
-COMMENT ON SCHEMA commons IS 'Schema for common application data and tenant registry.';
-GRANT ALL PRIVILEGES ON SCHEMA commons TO user_tenant_owner;
-
+CREATE ROLE user_tenant_owner WITH LOGIN PASSWORD 'microservice';
 CREATE ROLE tenant_user WITH NOLOGIN;
-COMMENT ON ROLE tenant_user IS 'Placeholder role for RLS policy enforcement.';
+
+CREATE SCHEMA commons;
+COMMENT ON SCHEMA commons IS 'Schema for common application data and tenant registry.';
+
+CREATE TABLE commons.tenant_registry
+(
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_name   VARCHAR(255) UNIQUE NOT NULL,
+    tenant_schema VARCHAR(255) UNIQUE NOT NULL
+);
+
+GRANT USAGE ON SCHEMA commons TO user_tenant_owner;
+GRANT SELECT, INSERT, UPDATE, DELETE ON commons.tenant_registry TO user_tenant_owner;
